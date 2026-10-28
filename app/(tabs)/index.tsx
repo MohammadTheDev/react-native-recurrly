@@ -69,7 +69,7 @@ export default function App() {
               />
             </View>
 
-            <ListHeading title="All Subscription" />
+            <ListHeading title="All Subscriptions" />
           </>
         )}
         style={{ flex: 1 }}
