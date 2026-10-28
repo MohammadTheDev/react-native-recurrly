@@ -1,6 +1,6 @@
-# Welcome to your Expo app 👋
+# Recurrly - Subscription Tracker 📱
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+This is an [Expo](https://expo.dev) project with Clerk authentication for managing your subscriptions.
 
 ## Get started
 
@@ -10,7 +10,17 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install
    ```
 
-2. Start the app
+2. Set up environment variables
+
+   Copy `.env.example` to `.env` and replace the placeholder with your Clerk publishable key from the [Clerk Dashboard](https://dashboard.clerk.com/~/api-keys):
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Keep `.env` local; do not commit it.
+
+3. Start the app
 
    ```bash
    npx expo start
@@ -24,6 +34,16 @@ In the output, you'll find options to open the app in a
 - [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+
+## Production builds with EAS
+
+`EXPO_PUBLIC_` variables are included in the client app bundle and are publicly readable. Set the Clerk publishable key in the EAS `production` environment as a plaintext or sensitive environment variable (not a secret):
+
+```bash
+eas env:set --name EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY --value YOUR_CLERK_PUBLISHABLE_KEY --environment production --visibility plaintext
+```
+
+Set the production build profile in `eas.json` to use the `production` environment, then build with `eas build --platform android --profile production` or `eas build --platform ios --profile production`. Never put Clerk secret keys in client-side environment variables.
 
 ## Get a fresh project
 
