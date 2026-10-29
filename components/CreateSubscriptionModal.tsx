@@ -12,6 +12,7 @@ import {
 import { clsx } from "clsx";
 import dayjs from "dayjs";
 import { icons } from "@/constants/icons";
+import { posthog } from "@/src/config/posthog";
 
 interface CreateSubscriptionModalProps {
   visible: boolean;
@@ -57,7 +58,8 @@ const CreateSubscriptionModal = ({
   const [category, setCategory] = useState<Category>("Other");
 
   const priceValue = Number(price);
-  const isValidForm = name.trim() !== "" && Number.isFinite(priceValue) && priceValue > 0;
+  const isValidForm =
+    name.trim() !== "" && Number.isFinite(priceValue) && priceValue > 0;
 
   const resetForm = () => {
     setName("");
@@ -90,6 +92,13 @@ const CreateSubscriptionModal = ({
       icon: icons.plus,
       billing: frequency,
       color: CATEGORY_COLORS[category],
+    });
+
+    posthog.capture("subscription_created", {
+      subscription_name: name.trim(),
+      subscription_price: priceValue,
+      subscription_frequency: frequency,
+      super_category: category,
     });
 
     resetForm();
@@ -213,7 +222,10 @@ const CreateSubscriptionModal = ({
 
               <Pressable
                 accessibilityRole="button"
-                className={clsx("auth-button", !isValidForm && "auth-button-disabled")}
+                className={clsx(
+                  "auth-button",
+                  !isValidForm && "auth-button-disabled",
+                )}
                 onPress={handleSubmit}
                 disabled={!isValidForm}
               >
