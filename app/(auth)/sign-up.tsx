@@ -4,6 +4,7 @@ import { useSignUp, useAuth } from '@clerk/expo';
 import { useState } from 'react';
 import { SafeAreaView as RNSafeAreaView } from 'react-native-safe-area-context';
 import { styled } from 'nativewind';
+import { posthog, posthogLogger } from '@/lib/posthog';
 
 const SafeAreaView = styled(RNSafeAreaView);
 
@@ -52,6 +53,13 @@ const SignUp = () => {
         if (signUp.status === 'complete') {
             await signUp.finalize({
                 navigate: ({ session, decorateUrl }) => {
+                    const userId = session?.user?.id;
+                    if (userId) {
+                        posthog?.identify(userId);
+                        posthog?.capture('sign_up_completed');
+                        posthogLogger?.info('registration completed', { verification_method: 'email_code' });
+                    }
+
                     if (session?.currentTask) {
                         console.log(session?.currentTask);
                         return;

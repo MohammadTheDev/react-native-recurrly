@@ -4,6 +4,7 @@ import { useSignIn } from '@clerk/expo';
 import { useState } from 'react';
 import { SafeAreaView as RNSafeAreaView } from 'react-native-safe-area-context';
 import { styled } from 'nativewind';
+import { posthog, posthogLogger } from '@/lib/posthog';
 
 const SafeAreaView = styled(RNSafeAreaView);
 
@@ -40,6 +41,13 @@ const SignIn = () => {
         if (signIn.status === 'complete') {
             await signIn.finalize({
                 navigate: ({ session, decorateUrl }) => {
+                    const userId = session?.user?.id;
+                    if (userId) {
+                        posthog?.identify(userId);
+                        posthog?.capture('sign_in_completed');
+                        posthogLogger?.info('authentication completed', { auth_flow: 'password' });
+                    }
+
                     if (session?.currentTask) {
                         console.log(session?.currentTask);
                         return;
@@ -80,6 +88,13 @@ const SignIn = () => {
         if (signIn.status === 'complete') {
             await signIn.finalize({
                 navigate: ({ session, decorateUrl }) => {
+                    const userId = session?.user?.id;
+                    if (userId) {
+                        posthog?.identify(userId);
+                        posthog?.capture('sign_in_completed');
+                        posthogLogger?.info('authentication completed', { auth_flow: 'email_code' });
+                    }
+
                     if (session?.currentTask) {
                         console.log(session?.currentTask);
                         return;

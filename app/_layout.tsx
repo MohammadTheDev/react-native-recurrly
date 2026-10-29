@@ -4,6 +4,8 @@ import {useFonts} from "expo-font";
 import {useEffect} from "react";
 import { ClerkProvider, useAuth } from '@clerk/expo';
 import { tokenCache } from '@clerk/expo/token-cache';
+import { PostHogProvider } from 'posthog-react-native';
+import { posthog } from '@/lib/posthog';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -32,7 +34,9 @@ function RootLayoutContent() {
 
   if (!fontsLoaded || !authLoaded) return null;
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  const content = <Stack screenOptions={{ headerShown: false }} />;
+
+  return posthog ? <PostHogProvider client={posthog}>{content}</PostHogProvider> : content;
 }
 
 export default function RootLayout() {
