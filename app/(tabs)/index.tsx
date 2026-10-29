@@ -1,22 +1,46 @@
 import "@/global.css"
-import {FlatList, Image, Text, View} from "react-native";
+import {FlatList, Image, Pressable, Text, View} from "react-native";
 import {SafeAreaView as RNSafeAreaView} from "react-native-safe-area-context";
 import { styled } from "nativewind";
 import images from "@/constants/images";
-import {HOME_BALANCE, HOME_SUBSCRIPTIONS, UPCOMING_SUBSCRIPTIONS} from "@/constants/data";
+import {HOME_BALANCE, UPCOMING_SUBSCRIPTIONS} from "@/constants/data";
 import {icons} from "@/constants/icons";
 import {formatCurrency} from "@/lib/utils";
 import dayjs from "dayjs";
 import ListHeading from "@/components/ListHeading";
 import UpcomingSubscriptionCard from "@/components/UpcomingSubscriptionCard";
 import SubscriptionCard from "@/components/SubscriptionCard";
+import CreateSubscriptionModal from "@/components/CreateSubscriptionModal";
 import {useState} from "react";
 import { useUser } from '@clerk/expo';
+import { posthog } from "@/lib/posthog";
+import { useSubscriptionStore } from "@/lib/subscriptionStore";
 const SafeAreaView = styled(RNSafeAreaView);
 
 export default function App() {
     const { user } = useUser();
     const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<string | null>(null);
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const { subscriptions, addSubscription } = useSubscriptionStore();
+
+    const handleSubscriptionPress = (item: Subscription) => {
+        const isExpanding = expandedSubscriptionId !== item.id;
+        setExpandedSubscriptionId((currentId) => (currentId === item.id ? null : item.id));
+        posthog?.capture(isExpanding ? 'subscription_expanded' : 'subscription_collapsed', {
+            subscription_name: item.name,
+            subscription_category: item.category ?? null,
+        });
+    };
+
+    const handleCreateSubscription = (newSubscription: Subscription) => {
+        addSubscription(newSubscription);
+        posthog?.capture('subscription_created', {
+            subscription_name: newSubscription.name,
+            subscription_price: newSubscription.price,
+            subscription_frequency: newSubscription.frequency ?? null,
+            subscription_category: newSubscription.category ?? null,
+        });
+    };
 
     // Get user display name: firstName, fullName, or email
     const displayName = user?.firstName || user?.fullName || user?.emailAddresses[0]?.emailAddress || 'User';
@@ -35,7 +59,13 @@ export default function App() {
                                     <Text className="home-user-name">{displayName}</Text>
                                 </View>
 
-                                <Image source={icons.add} className="home-add-icon" />
+                                <Pressable
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Create subscription"
+                                    onPress={() => setIsModalVisible(true)}
+                                >
+                                    <Image source={icons.add} className="home-add-icon" />
+                                </Pressable>
                             </View>
 
                             <View className="home-balance-card">
@@ -67,13 +97,13 @@ export default function App() {
                             <ListHeading title="All Subscriptions" />
                         </>
                     )}
-                    data={HOME_SUBSCRIPTIONS}
+                    data={subscriptions}
                     keyExtractor={(item) => item.id}
                     renderItem={({ item }) => (
                         <SubscriptionCard
                             {...item}
                             expanded={expandedSubscriptionId === item.id}
-                            onPress={() => setExpandedSubscriptionId((currentId) => (currentId === item.id ? null : item.id))}
+                            onPress={() => handleSubscriptionPress(item)}
                         />
                     )}
                     extraData={expandedSubscriptionId}
@@ -81,6 +111,11 @@ export default function App() {
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={<Text className="home-empty-state">No subscriptions yet.</Text>}
                     contentContainerClassName="pb-30"
+                />
+                <CreateSubscriptionModal
+                    visible={isModalVisible}
+                    onClose={() => setIsModalVisible(false)}
+                    onSubmit={handleCreateSubscription}
                 />
         </SafeAreaView>
     );
