@@ -11,10 +11,14 @@ const Settings = () => {
     const { user } = useUser();
 
     const handleSignOut = async () => {
-        await signOut();
-        posthog?.capture('sign_out_completed');
-        posthogLogger?.info('authentication session ended');
-        posthog?.reset();
+        try {
+            await signOut();
+            posthog?.capture('sign_out_completed');
+            posthogLogger?.info('authentication session ended');
+            posthog?.reset();
+        } catch (error) {
+            console.error('Sign-out failed:', error);
+        }
     };
 
     const displayName = user?.firstName || user?.fullName || user?.emailAddresses[0]?.emailAddress || 'User';

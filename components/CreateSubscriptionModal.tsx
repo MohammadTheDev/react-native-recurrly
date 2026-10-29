@@ -57,9 +57,16 @@ const CreateSubscriptionModal = ({
   const [frequency, setFrequency] = useState<Frequency>("Monthly");
   const [category, setCategory] = useState<Category>("Other");
 
-  const priceValue = Number(price);
-  const isValidForm =
-    name.trim() !== "" && Number.isFinite(priceValue) && priceValue > 0;
+  const isValidPrice = () => {
+    const trimmedPrice = price.trim();
+    if (!trimmedPrice) return false;
+    if (!/^\s*[+-]?(\d+(\.\d+)?|\.\d+)\s*$/.test(trimmedPrice)) return false;
+    const numValue = Number(trimmedPrice);
+    return Number.isFinite(numValue) && numValue > 0;
+  };
+
+  const priceValue = Number(price.trim());
+  const isValidForm = name.trim() !== "" && isValidPrice();
 
   const resetForm = () => {
     setName("");

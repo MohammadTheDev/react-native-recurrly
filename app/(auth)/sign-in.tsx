@@ -43,7 +43,10 @@ const SignIn = () => {
                 navigate: ({ session, decorateUrl }) => {
                     const userId = session?.user?.id;
                     if (userId) {
-                        posthog?.identify(userId);
+                        posthog?.identify(userId, {
+                            $set: { email: emailAddress },
+                            $set_once: { first_sign_in_date: new Date().toISOString() },
+                        });
                         posthog?.capture('sign_in_completed');
                         posthogLogger?.info('authentication completed', { auth_flow: 'password' });
                     }
@@ -90,7 +93,10 @@ const SignIn = () => {
                 navigate: ({ session, decorateUrl }) => {
                     const userId = session?.user?.id;
                     if (userId) {
-                        posthog?.identify(userId);
+                        posthog?.identify(userId, {
+                            $set: { email: emailAddress },
+                            $set_once: { first_sign_in_date: new Date().toISOString() },
+                        });
                         posthog?.capture('sign_in_completed');
                         posthogLogger?.info('authentication completed', { auth_flow: 'email_code' });
                     }

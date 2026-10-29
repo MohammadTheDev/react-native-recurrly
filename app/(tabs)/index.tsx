@@ -3,7 +3,7 @@ import {FlatList, Image, Pressable, Text, View} from "react-native";
 import {SafeAreaView as RNSafeAreaView} from "react-native-safe-area-context";
 import { styled } from "nativewind";
 import images from "@/constants/images";
-import {HOME_BALANCE, UPCOMING_SUBSCRIPTIONS} from "@/constants/data";
+import {HOME_BALANCE} from "@/constants/data";
 import {icons} from "@/constants/icons";
 import {formatCurrency} from "@/lib/utils";
 import dayjs from "dayjs";
@@ -11,7 +11,7 @@ import ListHeading from "@/components/ListHeading";
 import UpcomingSubscriptionCard from "@/components/UpcomingSubscriptionCard";
 import SubscriptionCard from "@/components/SubscriptionCard";
 import CreateSubscriptionModal from "@/components/CreateSubscriptionModal";
-import {useState} from "react";
+import {useMemo, useState} from "react";
 import { useUser } from '@clerk/expo';
 import { posthog } from "@/lib/posthog";
 import { useSubscriptionStore } from "@/lib/subscriptionStore";
@@ -22,6 +22,26 @@ export default function App() {
     const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<string | null>(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const { subscriptions, addSubscription } = useSubscriptionStore();
+
+    const upcomingSubscriptions = useMemo(() => {
+        const now = dayjs();
+        const nextWeek = now.add(7, 'days');
+        return subscriptions
+            .filter(sub =>
+                sub.status === 'active' &&
+                dayjs(sub.renewalDate).isAfter(now) &&
+                dayjs(sub.renewalDate).isBefore(nextWeek)
+            )
+            .sort((a, b) => dayjs(a.renewalDate).diff(dayjs(b.renewalDate)))
+            .map(sub => ({
+                id: sub.id,
+                icon: sub.icon,
+                name: sub.name,
+                price: sub.price,
+                currency: sub.currency,
+                daysLeft: Math.max(1, dayjs(sub.renewalDate).diff(now, 'day')),
+            }));
+    }, [subscriptions]);
 
     const handleSubscriptionPress = (item: Subscription) => {
         const isExpanding = expandedSubscriptionId !== item.id;
@@ -85,7 +105,7 @@ export default function App() {
                                 <ListHeading title="Upcoming" />
 
                                 <FlatList
-                                    data={UPCOMING_SUBSCRIPTIONS}
+                                    data={upcomingSubscriptions}
                                     renderItem={({ item }) => (<UpcomingSubscriptionCard {...item} />)}
                                     keyExtractor={(item) => item.id}
                                     horizontal
